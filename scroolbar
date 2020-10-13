@@ -1,0 +1,144 @@
+npm i @angular/cli@latest -g
+
+ng new myApp
+
+ng add @angular/material
+# HTml
+<cdk-virtual-scroll-viewport itemSize="100">
+
+  <li *cdkVirtualFor="let person of people">
+    {{ person }}
+  </li>
+
+</cdk-virtual-scroll-viewport>
+  <cdk-virtual-scroll-viewport itemSize="100" (scrolledIndexChange)="handler($event)">
+  </cdk-virtual-scroll-viewport>
+
+
+# css
+cdk-virtual-scroll-viewport {
+  height: 100vh;
+
+  li {
+    height: 100px;
+  }
+
+  // Bonus points
+  &::-webkit-scrollbar {
+    width: 1em;
+  }
+
+  &::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgb(238, 169, 79);
+  }
+}
+#TS
+import { Component, ViewChild } from '@angular/core';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+
+export class MyComponent {
+
+  @ViewChild(CdkVirtualScrollViewport)
+  viewport: CdkVirtualScrollViewport;
+
+  // example
+  go() {
+    this.viewport.scrollToIndex(23)
+  }
+}
+  ###########Scroll infinitio ###
+  # ts
+import { Component, ViewChild } from '@angular/core';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import { AngularFirestore } from '@angular/fire/firestore';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { map, tap, scan, mergeMap, throttleTime } from 'rxjs/operators';
+
+@Component({
+  selector: 'app-infinite-scroll',
+  templateUrl: './infinite-scroll.component.html',
+  styleUrls: ['./infinite-scroll.component.scss']
+})
+export class InfiniteScrollComponent {
+  @ViewChild(CdkVirtualScrollViewport)
+  viewport: CdkVirtualScrollViewport;
+
+  batch = 20;
+  theEnd = false;
+
+  offset = new BehaviorSubject(null);
+  infinite: Observable<any[]>;
+
+  constructor(private db: AngularFirestore) {
+    const batchMap = this.offset.pipe(
+      throttleTime(500),
+      mergeMap(n => this.getBatch(n)),
+      scan((acc, batch) => {
+        return { ...acc, ...batch };
+      }, {})
+    );
+
+    this.infinite = batchMap.pipe(map(v => Object.values(v)));
+  }
+
+  getBatch(offset) {
+    console.log(offset);
+    return this.db
+      .collection('people', ref =>
+        ref
+          .orderBy('name')
+          .startAfter(offset)
+          .limit(this.batch)
+      )
+      .snapshotChanges()
+      .pipe(
+        tap(arr => (arr.length ? null : (this.theEnd = true))),
+        map(arr => {
+          return arr.reduce((acc, cur) => {
+            const id = cur.payload.doc.id;
+            const data = cur.payload.doc.data();
+            return { ...acc, [id]: data };
+          }, {});
+        })
+      );
+  }
+
+  nextBatch(e, offset) {
+    if (this.theEnd) {
+      return;
+    }
+
+    const end = this.viewport.getRenderedRange().end;
+    const total = this.viewport.getDataLength();
+    console.log(`${end}, '>=', ${total}`);
+    if (end === total) {
+      this.offset.next(offset);
+    }
+  }
+
+  trackByIdx(i) {
+    return i;
+  }
+}
+# HTML
+<ng-container *ngIf="infinite | async as people">
+
+
+  <cdk-virtual-scroll-viewport itemSize="100" (scrolledIndexChange)="nextBatch($event, (people[people.length - 1].name))">
+
+
+    <li *cdkVirtualFor="let p of people; let i = index; trackBy: trackByIdx" class="animated lightSpeedIn">
+      <h2>{{ i }}. {{ p.emoji }} {{ p.name }}</h2>
+      <p> {{ p.bio }} </p>
+    </li>
+
+    <iframe *ngIf="theEnd" src="https://giphy.com/embed/lD76yTC5zxZPG" width="480"
+      height="352" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+
+  </cdk-virtual-scroll-viewport>
+
+</ng-container>
