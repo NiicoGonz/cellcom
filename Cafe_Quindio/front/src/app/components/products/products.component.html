@@ -1,0 +1,28 @@
+<body>
+    <app-navbar></app-navbar>
+    <div class="container-fluid bg-image">
+        <form [formGroup]="form">
+
+            <div class="row d-flex justify-content-center">
+
+                <div class="card" style="width: 18rem" *ngFor="let i of list_product">
+                    <img src="../../../assets/Recursos-Caffe/producto1.jpg" class="card-img-top" alt="...">
+                    <div class="card-body">
+                        <h5 class="card-title">{{i[0]}}</h5>
+                        <p class="card-text">{{i[1]}}</p>
+                        <p>price: {{i[2]}}</p>
+                        <mat-card-actions>
+                            <button (click)="addFav(id_fav)" mat-icon-button color="primary" aria-label="Example icon button with a heart icon">
+                            <mat-icon>favorite</mat-icon>
+                          </button>
+                            <button mat-raised-button color="primary">Comprar</button>
+                        </mat-card-actions>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+    </div>
+
+</body>
+<app-footer></app-footer>

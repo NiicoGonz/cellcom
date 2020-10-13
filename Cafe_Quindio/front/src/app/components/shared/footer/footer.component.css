@@ -1,0 +1,10 @@
+        footer {
+            background: linear-gradient(to right, #BC4749, #D6383B);
+        }
+        
+        p {
+            margin-bottom: 0px;
+            background: -webkit-linear-gradient(#eeeeee, #BC4749);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
